@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Movimientos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --color-morado: #3C114B;
+      --color-orquidea: #DA0081;
+      --color-claro: #fff;
+      --color-texto-input: #3C114B;
+      --color-sombra: rgba(0, 0, 0, 0.15);
+      --font-size-input: 16px;
+      --font-size-small: 10px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+      font-family: 'Manrope', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      flex-direction: column;
+      color: #000;
+    }
+
+    .formulario {
+      background: var(--color-claro);
+      padding: 40px 30px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 10px 30px var(--color-sombra);
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    .titulo {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--color-morado);
+      margin-bottom: 25px;
+      letter-spacing: 0.5px;
+    }
+
+    .input-campo {
+      width: 100%;
+      padding: 16px;
+      margin: 12px 0;
+      border: 1px solid #ccc;
+      border-radius: 14px;
+      font-size: var(--font-size-input);
+      background: #f9f9f9;
+      color: var(--color-texto-input);
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .input-campo:focus {
+      outline: none;
+      border-color: var(--color-orquidea);
+      box-shadow: 0 0 5px var(--color-orquidea);
+      background: #fff;
+    }
+
+    .boton {
+      margin-top: 18px;
+      padding: 15px;
+      width: 100%;
+      font-size: 16px;
+      border: none;
+      border-radius: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      background: linear-gradient(90deg, #DA0081, #f50057);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(218, 0, 129, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .boton:hover {
+      filter: brightness(1.05);
+      transform: scale(1.01);
+    }
+
+    .container {
+      position: relative;
+      width: 100%;
+      max-width: 390px;
+      margin: 0 auto;
+      background: #fff;
+      overflow: hidden;
+      display: none;
+      transform-origin: top left;
+      transform: scale(1);
+    }
+
+    .container img {
+      width: 100%;
+      display: block;
+    }
+
+    .input-overlay {
+      position: absolute;
+      background: transparent;
+      border: none;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--color-morado);
+      text-align: left;
+      pointer-events: none;
+      white-space: normal;
+    }
+
+    #nombre {
+      top: calc(227px * var(--escala));
+      left: calc(61px * var(--escala));
+      width: calc(340px * var(--escala));
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    #valor {
+      font-weight: 900;
+      font-size: 13px;
+      top: calc(236px * var(--escala));
+      right: calc(27px * var(--escala));
+      width: calc(280px * var(--escala));
+      text-align: right;
+      color: #b11b4a;
+    }
+
+    #valor span.decimales-pequenos {
+      font-size: var(--font-size-small);
+      vertical-align: baseline;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="formulario" id="pantalla">
+    <div class="titulo">Movimientos</div>
+    <input type="text" id="input-nombre" class="input-campo" placeholder="Nombre completo">
+    <input type="text" id="input-valor" class="input-campo" placeholder="Monto en pesos">
+    <button id="generar" class="boton">Generar Comprobante</button>
+  </div>
+
+  <div class="container" id="captura">
+    <img src="comprobante_base.png" alt="Fondo" id="imagen-fondo">
+    <div id="nombre" class="input-overlay"></div>
+    <div id="valor" class="input-overlay"></div>
+  </div>
+
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script>
+    document.getElementById('generar').onclick = async () => {
+      if (!validarEntradas()) return;
+
+      const container = document.getElementById('captura');
+      const img = document.getElementById('imagen-fondo');
+      const escala = Math.min(window.innerWidth / 390, 1);
+      container.style.setProperty('--escala', escala);
+
+      document.getElementById('pantalla').style.display = 'none';
+      container.style.display = 'block';
+
+      document.getElementById('nombre').textContent = document.getElementById('input-nombre').value.toUpperCase();
+      document.getElementById('valor').innerHTML = formatValorConEstilo(document.getElementById('input-valor').value);
+
+      await esperar(300);
+
+      if (!document.fullscreenElement && container.requestFullscreen) {
+        container.requestFullscreen();
+        container.style.transform = `scale(${1 / escala})`;
+      }
+    };
+
+    function validarEntradas() {
+      const nombre = document.getElementById('input-nombre').value.trim();
+      const valor = document.getElementById('input-valor').value.trim();
+      if (!nombre || !valor) {
+        alert("Todos los campos son obligatorios.");
+        return false;
+      }
+      if (!/^\d+$/.test(valor.replace(/\./g, ''))) {
+        alert("El valor debe contener solo números.");
+        return false;
+      }
+      return true;
+    }
+
+    function formatValorConEstilo(valor) {
+      valor = valor.replace(/\D/g, '');
+      if (!valor) return "-$ 0,<span class='decimales-pequenos'>00</span>";
+      const numero = parseInt(valor);
+      const entero = numero.toLocaleString("es-CO");
+      return `-$ ${entero},<span class='decimales-pequenos'>00</span>`;
+    }
+
+    function esperar(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) {
+        document.getElementById('captura').style.transform = 'scale(1)';
+      }
+    });
+  </script>
+</body>
+</html>
+
